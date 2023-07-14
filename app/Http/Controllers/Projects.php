@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +15,9 @@ class Projects extends Controller
         if(!empty($data['search'])){
             $data_search='%'.$data['search'].'%';
             $data_search = str_replace('"', '', $data_search);
-            $project=  DB::table('projects')->where('user_id','=',$request->route('id'))->where('name','LIKE',$data_search)->get();
+            $project=  DB::table('projects')->where('user_id','=',$request->route('id'))->where('name','LIKE',$data_search)->get()->toArray();
         }else{
-            $project=  DB::table('projects')->where('user_id','=',$request->route('id'))->get();
+            $project=  DB::table('projects')->where('user_id','=',$request->route('id'))->get()->toArray();
         }
 
         return $project;
@@ -29,20 +30,64 @@ class Projects extends Controller
         return $project;
     }
 
-    public function tasksList(Request $request){
 
-        if(!empty($data['user_id'])){
-            $tasks = DB::table('tasks')->where('project_id','=',$request->route('id'))->where('user_id','=',$data['user_id'])->get(['id','name','user_id','status']);
-        }else{
-            $tasks = DB::table('tasks')->where('project_id','=',$request->route('id'))->get(['id','name','user_id','status']);
+    public function store(Request $request){
+
+        $validate=$request->validate([
+            'user_id'=>'required|numeric',
+            'name'=>'required',
+        ]);
+
+        //Project::create($request->all());
+        if($validate->fails()) {
+            return 'error validate';
+        }
+        $data=$request->all();
+        $project= new Project();
+        $project->user_id=$data['user_id'];
+        $project->name=$data['name'];
+        $project->description=(!empty($data['description']) ? $data['description']:'');
+        $project->save();
+
+        //$new_proj=Project::findOfFail($project->id);
+
+       return $project;
+
+    }
+
+    public function updateProject(Request $request){
+
+        $validate=$request->validate([
+            'user_id'=>'required|numeric',
+            'name'=>'required',
+        ]);
+
+        if($validate->fails()) {
+            return 'error validate';
         }
 
-       return json_decode(json_encode($tasks), true);
+        $data=$request->all();
+        if(empty($request->route('id'))){
+            return 'error no id project';
+        }
+        $project = Project::findOrFail($request->route('id'));
+        $project->user_id=$data['user_id'];
+        $project->name=$data['name'];
+        $project->description=(!empty($data['description']) ? $data['description']:'');
+        $project->update();
+
+        return $project;
+
     }
 
-    public function validate(Request $request){
+    public function deleteProject(Request $request){
 
-        //
-
+        if(empty($request->route('id'))){
+            return 'error no id project';
+        }
+        $project=Project::findOrFail($request->route('id'));
+        $project->delete();
+        return ['success'=>'true'];
     }
+
 }

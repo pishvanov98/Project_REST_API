@@ -75,6 +75,11 @@ return [
             'level' => env('LOG_LEVEL', 'critical'),
         ],
 
+        'command' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/clean-up-tasks.log'),
+        ],
+
         'papertrail' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
